@@ -27,7 +27,7 @@ def main() -> None:
     result: CoinQuotes = anycoin.get_coin_quotes(
         coins=[
             CoinSymbols.btc,
-            CoinSymbols.trx,
+            CoinSymbols('trx'),  # A string can be passed
         ],
         quotes_in=[CoinSymbols.usd, CoinSymbols.eur, CoinSymbols.brl],
     )
