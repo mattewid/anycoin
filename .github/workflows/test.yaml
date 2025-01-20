@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -24,7 +23,7 @@ jobs:
         cache-dependency-path: pyproject.toml
 
     - name: Install poetry
-        run: pipx install poetry==1.8.3
+      run: pipx install poetry==1.8.3
 
     - name: Install dependencies
       run: poetry install --with dev
@@ -42,7 +41,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -52,7 +50,7 @@ jobs:
         cache-dependency-path: pyproject.toml
     
     - name: Install poetry
-        run: pipx install poetry==1.8.3
+      run: pipx install poetry==1.8.3
 
     - name: Install dependencies
       run: poetry install --with dev
