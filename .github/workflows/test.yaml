@@ -29,7 +29,7 @@ jobs:
       run: poetry install --with dev
 
     - name: Test with pytest
-      run: pytest -vv
+      run: poetry run pytest -vv
 
 
   test-others-os:
@@ -56,4 +56,4 @@ jobs:
       run: poetry install --with dev
     
     - name: Test with pytest
-      run: pytest -vv
+      run: poetry run pytest -vv
