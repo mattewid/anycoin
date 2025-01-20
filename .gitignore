@@ -1,0 +1,8 @@
+*.pyc
+dist/
+test.py
+htmlcov
+.coverage
+nohup.out
+poetry.lock
+.pytest_cache/

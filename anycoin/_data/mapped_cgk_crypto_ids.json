@@ -1,0 +1,21 @@
+{
+    "btc": "bitcoin",
+    "eth": "ethereum",
+    "xrp": "ripple",
+    "usdt": "tether",
+    "sol": "solana",
+    "bnb": "binancecoin",
+    "doge": "dogecoin",
+    "usdc": "usd-coin",
+    "ada": "cardano",
+    "trx": "tron",
+    "avax": "avalanche-2",
+    "ton": "the-open-network",
+    "not": "notcoin",
+    "shib": "shiba-inu",
+    "dot": "polkadot",
+    "ltc": "litecoin",
+    "bch": "bitcoin-cash",
+    "pepe": "pepe",
+    "pol": "polygon-ecosystem-token"
+}
