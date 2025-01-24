@@ -31,11 +31,11 @@ class CoinSymbols(Enum):
     pol = CoinItem('pol', 'Polygon')
 
     # Fiat
-    usd: str = CoinItem('usd', 'United States Dollar')
-    eur: str = CoinItem('eur', 'Euro')
-    brl: str = CoinItem('brl', 'Brazilian Real')
-    rub: str = CoinItem('rub', 'Russian ruble')
-    bdt: str = CoinItem('bdt', 'Bangladeshi taka')
+    usd = CoinItem('usd', 'United States Dollar')
+    eur = CoinItem('eur', 'Euro')
+    brl = CoinItem('brl', 'Brazilian Real')
+    rub = CoinItem('rub', 'Russian ruble')
+    bdt = CoinItem('bdt', 'Bangladeshi taka')
 
     def __new__(cls, item):
         obj = object.__new__(cls)
