@@ -4,7 +4,7 @@ import httpx
 import pytest
 import respx
 
-from anycoin import AnyCoin, CoinSymbols
+from anycoin import AnyCoin, CoinSymbols, QuoteSymbols
 from anycoin.exeptions import GetCoinQuotes as GetCoinQuotesException
 from anycoin.response_models import CoinQuotes
 from anycoin.services.coingecko import CoinGeckoService
@@ -37,7 +37,7 @@ def test_get_coin_quotes():
         coins=[
             CoinSymbols.btc,
         ],
-        quotes_in=[CoinSymbols.usd],
+        quotes_in=[QuoteSymbols.usd],
     )
     assert result.coins[CoinSymbols.btc]
     assert result.api_service is cgk_service
@@ -69,5 +69,5 @@ def test_get_coin_quotes_exception():
             coins=[
                 CoinSymbols.btc,
             ],
-            quotes_in=[CoinSymbols.usd],
+            quotes_in=[QuoteSymbols.usd],
         )

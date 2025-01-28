@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from anycoin import CoinSymbols
+from anycoin import CoinSymbols, QuoteSymbols
 from anycoin.response_models import CoinQuotes, CoinRow, QuoteRow
 from anycoin.services.coingecko import CoinGeckoService
 
@@ -9,7 +9,7 @@ def test_coin_quotes_repr():
     model = CoinQuotes(
         coins={
             CoinSymbols.btc: CoinRow(
-                quotes={CoinSymbols.usd: QuoteRow(quote=Decimal('100000'))}
+                quotes={QuoteSymbols.usd: QuoteRow(quote=Decimal('100000'))}
             )
         },
         api_service=CoinGeckoService(api_key='<api-key>'),
@@ -24,7 +24,7 @@ def test_coin_quotes_str():
     model = CoinQuotes(
         coins={
             CoinSymbols.btc: CoinRow(
-                quotes={CoinSymbols.usd: QuoteRow(quote=Decimal('100000'))}
+                quotes={QuoteSymbols.usd: QuoteRow(quote=Decimal('100000'))}
             )
         },
         api_service=CoinGeckoService(api_key='<api-key>'),
@@ -39,7 +39,7 @@ def test_coin_quotes_dump_json():
     model = CoinQuotes(
         coins={
             CoinSymbols.btc: CoinRow(
-                quotes={CoinSymbols.usd: QuoteRow(quote=Decimal('100000'))}
+                quotes={QuoteSymbols.usd: QuoteRow(quote=Decimal('100000'))}
             )
         },
         api_service=CoinGeckoService(api_key='<api-key>'),

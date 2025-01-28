@@ -5,7 +5,7 @@ from functools import partial
 
 from anyio.from_thread import BlockingPortal, start_blocking_portal
 
-from .._enums import CoinSymbols
+from .._enums import CoinSymbols, QuoteSymbols
 from ..abc import APIService
 from ..response_models import CoinQuotes
 from .async_ import AsyncAnyCoin
@@ -31,7 +31,7 @@ class AnyCoin:
     def get_coin_quotes(
         self,
         coins: list[CoinSymbols],
-        quotes_in: list[CoinSymbols],
+        quotes_in: list[QuoteSymbols],
     ) -> CoinQuotes:
         portal: BlockingPortal = self._get_portal()
         return portal.call(

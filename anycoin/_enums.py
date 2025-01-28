@@ -9,7 +9,6 @@ class CoinItem:
 
 
 class CoinSymbols(Enum):
-    # Crypto
     btc = CoinItem('btc', 'Bitcoin')
     eth = CoinItem('eth', 'Ethereum')
     xrp = CoinItem('xrp', 'XRP')
@@ -30,7 +29,18 @@ class CoinSymbols(Enum):
     pepe = CoinItem('pepe', 'Pepe')
     pol = CoinItem('pol', 'Polygon')
 
-    # Fiat
+    def __new__(cls, item):
+        obj = object.__new__(cls)
+        obj._value_ = item.value
+        obj._name = item.name
+        return obj
+
+    @property
+    def name(self):
+        return self._name
+
+
+class QuoteSymbols(Enum):
     usd = CoinItem('usd', 'United States Dollar')
     eur = CoinItem('eur', 'Euro')
     brl = CoinItem('brl', 'Brazilian Real')

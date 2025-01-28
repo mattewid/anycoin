@@ -1,7 +1,7 @@
 import traceback
 from typing import Any, Generator
 
-from .._enums import CoinSymbols
+from .._enums import CoinSymbols, QuoteSymbols
 from ..abc import APIService
 from ..exeptions import GetCoinQuotes as GetCoinQuotesException
 from ..response_models import CoinQuotes
@@ -20,7 +20,7 @@ class AsyncAnyCoin:
     async def get_coin_quotes(
         self,
         coins: list[CoinSymbols],
-        quotes_in: list[CoinSymbols],
+        quotes_in: list[QuoteSymbols],
     ) -> CoinQuotes:
         for service in self._get_services():
             try:

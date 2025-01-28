@@ -15,36 +15,36 @@ async def _get_json_data(file_name: str) -> dict:
 """
 Mapped coinmarketcap ids
 
-Crypto ids: https://coinmarketcap.com/api/
+Coin ids: https://coinmarketcap.com/api/
     documentation/v1/#operation/getV1CryptocurrencyMap
 
-Fiat Ids: https://coinmarketcap.com/api/documentation/
+Quote Ids: https://coinmarketcap.com/api/documentation/
     v1/#operation/getV1FiatMap
 """
 
 
-async def get_cmc_crypto_ids() -> dict[str, str]:
-    return await _get_json_data('mapped_cmc_crypto_ids.json')
+async def get_cmc_coins_ids() -> dict[str, str]:
+    return await _get_json_data('mapped_cmc_coin_ids.json')
 
 
-async def get_cmc_converters_ids() -> dict[str, str]:
-    return await _get_json_data('mapped_cmc_converter_ids.json')
+async def get_cmc_quotes_ids() -> dict[str, str]:
+    return await _get_json_data('mapped_cmc_quote_ids.json')
 
 
 """
 Mapped coingecko ids
 
-Crypto ids: https://docs.coingecko.com/
+Coin ids: https://docs.coingecko.com/
     reference/coins-list
 
-Fiat ids: https://docs.coingecko.com/reference/
+Quote ids: https://docs.coingecko.com/reference/
     simple-supported-currencies
 """
 
 
-async def get_cgk_crypto_ids() -> dict[str, str]:
-    return await _get_json_data('mapped_cgk_crypto_ids.json')
+async def get_cgk_coin_ids() -> dict[str, str]:
+    return await _get_json_data('mapped_cgk_coin_ids.json')
 
 
-async def get_cgk_converters_ids() -> dict[str, str]:
-    return await _get_json_data('mapped_cgk_converter_ids.json')
+async def get_cgk_quotes_ids() -> dict[str, str]:
+    return await _get_json_data('mapped_cgk_quote_ids.json')

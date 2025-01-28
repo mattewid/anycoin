@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ._enums import CoinSymbols
+from ._enums import CoinSymbols, QuoteSymbols
 from .abc import APIService
 
 
@@ -15,7 +15,7 @@ class QuoteRow(BaseModel):
 
 
 class CoinRow(BaseModel):
-    quotes: dict[CoinSymbols, QuoteRow]
+    quotes: dict[QuoteSymbols, QuoteRow]
 
 
 class CoinQuotes(BaseModel):
@@ -32,9 +32,9 @@ class CoinQuotes(BaseModel):
             for quote_coin_id, quote_data in raw_data['data'][coin_id][
                 'quote'
             ].items():
-                quote_coin_symbol: CoinSymbols = (
-                    await api_service.get_converter_coin_symbol_by_id(
-                        converter_id=str(quote_coin_id)
+                quote_coin_symbol: QuoteSymbols = (
+                    await api_service.get_quote_symbol_by_id(
+                        quote_id=str(quote_coin_id)
                     )
                 )
                 quotes[quote_coin_symbol] = QuoteRow(
@@ -45,10 +45,8 @@ class CoinQuotes(BaseModel):
 
         coins_data: dict[CoinSymbols, CoinRow] = {}
         for coin_id, coin_data in raw_data['data'].items():
-            coin_symbol: CoinSymbols = (
-                await api_service.get_crypto_coin_symbol_by_id(
-                    crypto_id=str(coin_id)
-                )
+            coin_symbol: CoinSymbols = await api_service.get_coin_symbol_by_id(
+                coin_id=str(coin_id)
             )
             quotes: dict[CoinSymbols, QuoteRow] = await get_coin_quotes(
                 coin_id
@@ -68,9 +66,9 @@ class CoinQuotes(BaseModel):
         async def get_coin_quotes(coin_id) -> dict[CoinSymbols, QuoteRow]:
             quotes: dict[CoinSymbols, QuoteRow] = {}
             for quote_coin_id, quote_value in raw_data[coin_id].items():
-                quote_coin_symbol: CoinSymbols = (
-                    await api_service.get_converter_coin_symbol_by_id(
-                        converter_id=str(quote_coin_id)
+                quote_coin_symbol: QuoteSymbols = (
+                    await api_service.get_quote_symbol_by_id(
+                        quote_id=str(quote_coin_id)
                     )
                 )
                 quotes[quote_coin_symbol] = QuoteRow(
@@ -81,10 +79,8 @@ class CoinQuotes(BaseModel):
 
         coins_data: dict[CoinSymbols, CoinRow] = {}
         for coin_id, coin_data in raw_data.items():
-            coin_symbol: CoinSymbols = (
-                await api_service.get_crypto_coin_symbol_by_id(
-                    crypto_id=str(coin_id)
-                )
+            coin_symbol: CoinSymbols = await api_service.get_coin_symbol_by_id(
+                coin_id=str(coin_id)
             )
             quotes: dict[CoinSymbols, QuoteRow] = await get_coin_quotes(
                 coin_id

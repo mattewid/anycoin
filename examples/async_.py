@@ -1,6 +1,6 @@
 import asyncio
 
-from anycoin import AsyncAnyCoin, CoinSymbols
+from anycoin import AsyncAnyCoin, CoinSymbols, QuoteSymbols
 from anycoin.response_models import CoinQuotes
 from anycoin.services.coingecko import CoinGeckoService
 from anycoin.services.coinmarketcap import CoinMarketCapService
@@ -31,7 +31,7 @@ async def main() -> None:
             CoinSymbols.btc,
             CoinSymbols('trx'),  # A string can be passed
         ],
-        quotes_in=[CoinSymbols.usd, CoinSymbols.eur, CoinSymbols.brl],
+        quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur, QuoteSymbols.brl],
     )
     print(result)
 

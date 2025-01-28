@@ -3,16 +3,16 @@ from http import HTTPStatus
 
 import httpx
 
-from .._enums import CoinSymbols
-from .._mapped_ids import get_cgk_converters_ids as _get_cgk_converters_ids
-from .._mapped_ids import get_cgk_crypto_ids as _get_cgk_crypto_ids
+from .._enums import CoinSymbols, QuoteSymbols
+from .._mapped_ids import get_cgk_coin_ids as _get_cgk_coin_ids
+from .._mapped_ids import get_cgk_quotes_ids as _get_cgk_quotes_ids
 from ..exeptions import (
-    ConverterCoinNotSupportedCGK as ConverterCoinNotSupportedException,
-)
-from ..exeptions import (
-    CryptoCoinNotSupportedCGK as CryptoCoinNotSupportedException,
+    CoinNotSupportedCGK as CoinNotSupportedCGKException,
 )
 from ..exeptions import GetCoinQuotes as GetCoinQuotesException
+from ..exeptions import (
+    QuoteCoinNotSupportedCGK as QuoteCoinNotSupportedCGKException,
+)
 from ..response_models import CoinQuotes
 from .base import BaseAPIService
 
@@ -24,20 +24,19 @@ class CoinGeckoService(BaseAPIService):
     async def get_coin_quotes(
         self,
         coins: list[CoinSymbols],
-        quotes_in: list[CoinSymbols],
+        quotes_in: list[QuoteSymbols],
     ) -> CoinQuotes:
         try:
             coin_ids: list[str] = [
-                await self.get_crypto_id_by_coin_symbol(coin) for coin in coins
+                await self.get_coin_id_by_symbol(coin) for coin in coins
             ]
             convert_ids: list[str] = [
-                await self.get_converter_id_by_coin_symbol(coin)
-                for coin in quotes_in
+                await self.get_quote_id_by_symbol(quote) for quote in quotes_in
             ]
-        except CryptoCoinNotSupportedException as expt:
+        except CoinNotSupportedCGKException as expt:
             raise GetCoinQuotesException(str(expt)) from expt
 
-        except ConverterCoinNotSupportedException as expt:
+        except QuoteCoinNotSupportedCGKException as expt:
             raise GetCoinQuotesException(str(expt)) from expt
 
         params = {
@@ -54,57 +53,57 @@ class CoinGeckoService(BaseAPIService):
         )
 
     @staticmethod
-    async def get_crypto_id_by_coin_symbol(coin_symbol: CoinSymbols) -> str:
-        crypto_ids = await _get_cgk_crypto_ids()
+    async def get_coin_id_by_symbol(coin_symbol: CoinSymbols) -> str:
+        coin_ids = await _get_cgk_coin_ids()
         try:
-            return crypto_ids[coin_symbol.value]
+            return coin_ids[coin_symbol.value]
         except KeyError:
-            raise CryptoCoinNotSupportedException(
-                f'Crypto coin {coin_symbol} not supported'
+            raise CoinNotSupportedCGKException(
+                f'Coin {coin_symbol} not supported'
             ) from None
 
     @staticmethod
-    async def get_crypto_coin_symbol_by_id(crypto_id: str) -> CoinSymbols:
-        crypto_ids = await _get_cgk_crypto_ids()
-        coins = list(
-            filter(lambda item: item[1] == crypto_id, crypto_ids.items())
-        )
+    async def get_coin_symbol_by_id(coin_id: str) -> CoinSymbols:
+        coin_ids = await _get_cgk_coin_ids()
+        coins = list(filter(lambda item: item[1] == coin_id, coin_ids.items()))
         if not coins:
-            raise CryptoCoinNotSupportedException(
-                f'Crypto with id {crypto_id} not supported'
+            raise CoinNotSupportedCGKException(
+                f'Coin with id {coin_id} not supported'
             )
 
         coin_symbol_str = coins[0][0]
         return CoinSymbols(coin_symbol_str)
 
     @staticmethod
-    async def get_converter_id_by_coin_symbol(coin_symbol: CoinSymbols) -> str:
-        converter_ids = await _get_cgk_converters_ids()
+    async def get_quote_id_by_symbol(
+        quote_symbol: QuoteSymbols,
+    ) -> str:
+        quote_ids = await _get_cgk_quotes_ids()
         try:
-            return converter_ids[coin_symbol.value]
+            return quote_ids[quote_symbol.value]
         except KeyError:
-            raise ConverterCoinNotSupportedException(
-                f'Converter coin {coin_symbol} not supported'
+            raise QuoteCoinNotSupportedCGKException(
+                f'Quote {quote_symbol} not supported'
             ) from None
 
     @staticmethod
-    async def get_converter_coin_symbol_by_id(
-        converter_id: str,
-    ) -> CoinSymbols:
-        converter_ids = await _get_cgk_converters_ids()
+    async def get_quote_symbol_by_id(
+        quote_id: str,
+    ) -> QuoteSymbols:
+        quote_ids = await _get_cgk_quotes_ids()
         coins = list(
             filter(
-                lambda item: item[1] == converter_id,
-                converter_ids.items(),
+                lambda item: item[1] == quote_id,
+                quote_ids.items(),
             )
         )
         if not coins:
-            raise ConverterCoinNotSupportedException(
-                f'Converter coin with id {converter_id} not supported'
+            raise QuoteCoinNotSupportedCGKException(
+                f'Quote with id {quote_id} not supported'
             )
 
         coin_symbol_str = coins[0][0]
-        return CoinSymbols(coin_symbol_str)
+        return QuoteSymbols(coin_symbol_str)
 
     async def _send_request(
         self,

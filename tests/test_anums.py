@@ -1,7 +1,7 @@
 from anycoin import CoinSymbols
 
 
-def test_crypto_symbols_enum():
+def test_coin_symbols_enum():
     coin_symbol = CoinSymbols.btc
 
     # Test value
