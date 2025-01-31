@@ -1,6 +1,7 @@
 import atexit
 import threading
 from contextlib import ExitStack
+from decimal import Decimal
 from functools import partial
 
 from anyio.from_thread import BlockingPortal, start_blocking_portal
@@ -39,6 +40,22 @@ class AnyCoin:
                 self._async_instance.get_coin_quotes,
                 coins=coins,
                 quotes_in=quotes_in,
+            )
+        )
+
+    def convert_coin(
+        self,
+        amount: int | float | Decimal,
+        from_coin: CoinSymbols | QuoteSymbols,
+        to_coin: CoinSymbols | QuoteSymbols,
+    ) -> Decimal:
+        portal: BlockingPortal = self._get_portal()
+        return portal.call(
+            partial(
+                self._async_instance.convert_coin,
+                amount=amount,
+                from_coin=from_coin,
+                to_coin=to_coin,
             )
         )
 
