@@ -35,6 +35,8 @@ Documentation = "https://github.com/HK-Mattew/anycoin/tree/main/examples"
 Repository = "https://github.com/HK-Mattew/anycoin"
 Issues = "https://github.com/HK-Mattew/anycoin/issues"
 
+[tool.setuptools.package-data]
+anycoin = ["_data/*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
