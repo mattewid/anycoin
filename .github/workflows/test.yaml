@@ -22,14 +22,11 @@ jobs:
         cache: pip
         cache-dependency-path: pyproject.toml
 
-    - name: Install poetry
-      run: pipx install poetry==1.8.3
-
     - name: Install dependencies
-      run: poetry install --with dev
+      run: pip install .[dev]
 
     - name: Test with pytest
-      run: poetry run pytest -vv
+      run: pytest -vv
 
 
   test-others-os:
@@ -48,12 +45,9 @@ jobs:
         allow-prereleases: true
         cache: pip
         cache-dependency-path: pyproject.toml
-    
-    - name: Install poetry
-      run: pipx install poetry==1.8.3
 
     - name: Install dependencies
-      run: poetry install --with dev
+      run: pip install .[dev]
     
     - name: Test with pytest
-      run: poetry run pytest -vv
+      run: pytest -vv

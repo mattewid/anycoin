@@ -1,8 +1,10 @@
 *.pyc
 dist/
 test.py
+venv
+build
 htmlcov
 .coverage
 nohup.out
-poetry.lock
 .pytest_cache/
+anycoin.egg-info
