@@ -2,7 +2,9 @@
 dist/
 test.py
 venv
+.venv
 build
+uv.lock
 htmlcov
 .coverage
 nohup.out
