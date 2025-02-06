@@ -339,7 +339,7 @@ async def test_get_coin_quotes_with_cache_and_value_in_cache():
             '{'
             """"coins": {"btc": {"quotes": {"usd": {"quote": "100811"}}}},"""
             """"api_service": "coingecko","""
-            """"raw_data": {"bitcoin":{"usd": 100811}}"""
+            f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
             '}'
         )
     )
@@ -394,7 +394,7 @@ async def test_get_coin_quotes_with_cache_and_value_not_in_cache():
         '{'
         """"coins": {"btc": {"quotes": {"usd": {"quote": "100811"}}}},"""
         """"api_service": "coingecko","""
-        """"raw_data": {"bitcoin":{"usd": 100811}}"""
+        f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
         '}'
     )
     await cache.get('coins:btc;quotes_in:usd') == EXPECTED_VALUE_IN_CACHE
