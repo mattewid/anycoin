@@ -22,6 +22,9 @@ jobs:
         cache: pip
         cache-dependency-path: pyproject.toml
 
+    - name: Start docker-compose.yaml services
+      run: docker compose up -d
+
     - name: Install dependencies
       run: pip install .[dev]
 
@@ -45,6 +48,9 @@ jobs:
         allow-prereleases: true
         cache: pip
         cache-dependency-path: pyproject.toml
+
+    - name: Start docker-compose.yaml services
+      run: docker compose up -d
 
     - name: Install dependencies
       run: pip install .[dev]
