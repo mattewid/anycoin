@@ -2,10 +2,12 @@ import json
 from http import HTTPStatus
 
 import httpx
+from aiocache.lock import RedLock
 
 from .._enums import CoinSymbols, QuoteSymbols
 from .._mapped_ids import get_cgk_coin_ids as _get_cgk_coin_ids
 from .._mapped_ids import get_cgk_quotes_ids as _get_cgk_quotes_ids
+from ..cache import Cache, _get_cache_key_for_get_coin_quotes_method_params
 from ..exeptions import (
     CoinNotSupportedCGK as CoinNotSupportedCGKException,
 )
@@ -18,39 +20,54 @@ from .base import BaseAPIService
 
 
 class CoinGeckoService(BaseAPIService):
-    def __init__(self, api_key: str) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        cache: Cache | None = None,
+        cache_ttl: int = 300,
+    ) -> None:
         self._api_key = api_key
+        self._cache = cache
+        self._cache_ttl = cache_ttl
+
+        self._cache_lock = None
+        if self._cache is not None:
+            self._cache_lock = RedLock(
+                self._cache,
+                key='get_coin_quotes',
+                lease=20,
+            )
 
     async def get_coin_quotes(
         self,
         coins: list[CoinSymbols],
         quotes_in: list[QuoteSymbols],
     ) -> CoinQuotes:
-        try:
-            coin_ids: list[str] = [
-                await self.get_coin_id_by_symbol(coin) for coin in coins
-            ]
-            convert_ids: list[str] = [
-                await self.get_quote_id_by_symbol(quote) for quote in quotes_in
-            ]
-        except CoinNotSupportedCGKException as expt:
-            raise GetCoinQuotesException(str(expt)) from expt
+        if self._cache is None:
+            coin_quotes: CoinQuotes = await self._get_coin_quotes(
+                coins=coins, quotes_in=quotes_in
+            )
+        else:
+            async with self._cache_lock:
+                cache_key: str = (
+                    _get_cache_key_for_get_coin_quotes_method_params(
+                        coins=coins, quotes_in=quotes_in
+                    )
+                )
 
-        except QuoteCoinNotSupportedCGKException as expt:
-            raise GetCoinQuotesException(str(expt)) from expt
+                if cached_value := await self._cache.get(cache_key):
+                    coin_quotes = CoinQuotes.model_validate_json(cached_value)
+                else:
+                    coin_quotes: CoinQuotes = await self._get_coin_quotes(
+                        coins=coins, quotes_in=quotes_in
+                    )
+                    await self._cache.set(
+                        cache_key,
+                        coin_quotes.model_dump_json(),
+                        ttl=self._cache_ttl,
+                    )
 
-        params = {
-            'ids': ','.join(coin_ids),
-            'vs_currencies': ','.join(convert_ids),
-            'precision': 'full',
-        }
-
-        raw_data = await self._send_request(
-            path='/simple/price', method='get', params=params
-        )
-        return await CoinQuotes.from_cgk_raw_data(
-            api_service=self, raw_data=raw_data
-        )
+        return coin_quotes
 
     @staticmethod
     async def get_coin_id_by_symbol(coin_symbol: CoinSymbols) -> str:
@@ -104,6 +121,35 @@ class CoinGeckoService(BaseAPIService):
 
         coin_symbol_str = coins[0][0]
         return QuoteSymbols(coin_symbol_str)
+
+    async def _get_coin_quotes(
+        self,
+        coins: list[CoinSymbols],
+        quotes_in: list[QuoteSymbols],
+    ) -> CoinQuotes:
+        try:
+            coin_ids: list[str] = [
+                await self.get_coin_id_by_symbol(coin) for coin in coins
+            ]
+            convert_ids: list[str] = [
+                await self.get_quote_id_by_symbol(quote) for quote in quotes_in
+            ]
+        except CoinNotSupportedCGKException as expt:
+            raise GetCoinQuotesException(str(expt)) from expt
+
+        except QuoteCoinNotSupportedCGKException as expt:
+            raise GetCoinQuotesException(str(expt)) from expt
+
+        params = {
+            'ids': ','.join(coin_ids),
+            'vs_currencies': ','.join(convert_ids),
+            'precision': 'full',
+        }
+
+        raw_data = await self._send_request(
+            path='/simple/price', method='get', params=params
+        )
+        return await CoinQuotes.from_cgk_raw_data(raw_data=raw_data)
 
     async def _send_request(
         self,

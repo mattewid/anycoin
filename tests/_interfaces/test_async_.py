@@ -44,7 +44,7 @@ async def test_get_coin_quotes():
         quotes_in=[QuoteSymbols.usd],
     )
     assert result.coins[CoinSymbols.btc]
-    assert result.api_service is cgk_service
+    assert result.api_service == 'coingecko'
     assert result.raw_data
 
 

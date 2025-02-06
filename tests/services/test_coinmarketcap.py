@@ -1,6 +1,7 @@
 import json
 from decimal import Decimal
 from enum import Enum
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -408,7 +409,7 @@ async def test_get_coin_quotes():
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -517,7 +518,7 @@ async def test_get_coin_quotes_multi_coins():
         coins=[CoinSymbols.btc, CoinSymbols.eth], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -608,7 +609,7 @@ async def test_get_coin_quotes_multi_quotes():
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -747,7 +748,7 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
         quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur],
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -763,6 +764,178 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
                 QuoteSymbols.eur: {'quote': Decimal('3')},
             }
         },
+    }
+
+
+async def test_get_coin_quotes_with_cache_and_value_in_cache(any_aiocache):
+    EXAMPLE_RESPONSE = {
+        'data': {
+            '1': {
+                'id': 1,
+                'name': 'Bitcoin',
+                'symbol': 'BTC',
+                'slug': 'bitcoin',
+                'is_active': 1,
+                'is_fiat': 0,
+                'circulating_supply': 17199862,
+                'total_supply': 17199862,
+                'max_supply': 21000000,
+                'date_added': '2013-04-28T00:00:00.000Z',
+                'num_market_pairs': 331,
+                'cmc_rank': 1,
+                'last_updated': '2018-08-09T21:56:28.000Z',
+                'tags': ['mineable'],
+                'platform': None,
+                'self_reported_circulating_supply': None,
+                'self_reported_market_cap': None,
+                'quote': {
+                    '2781': {  # USD
+                        'price': 6602.60701122,
+                        'volume_24h': 4314444687.5194,
+                        'volume_change_24h': -0.152774,
+                        'percent_change_1h': 0.988615,
+                        'percent_change_24h': 4.37185,
+                        'percent_change_7d': -12.1352,
+                        'percent_change_30d': -12.1352,
+                        'market_cap': 852164659250.2758,
+                        'market_cap_dominance': 51,
+                        'fully_diluted_market_cap': 952835089431.14,
+                        'last_updated': '2018-08-09T21:56:28.000Z',
+                    }
+                },
+            }
+        },
+        'status': {
+            'timestamp': '2025-01-19T10:00:27.010Z',
+            'error_code': 0,
+            'error_message': '',
+            'elapsed': 10,
+            'credit_count': 1,
+            'notice': '',
+        },
+    }
+
+    any_aiocache.get = AsyncMock(
+        return_value=(
+            '{'
+            """"coins": {"btc": {"quotes": {"usd": {"quote": "6602.60701122"}}}},"""  # noqa: E501
+            """"api_service": "coinmarketcap","""
+            f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
+            '}'
+        )
+    )
+
+    cmc_service = CoinMarketCapService(
+        api_key='<api-key>',
+        cache=any_aiocache,
+    )
+
+    result: CoinQuotes = await cmc_service.get_coin_quotes(
+        coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+    )
+
+    any_aiocache.get.assert_called_once_with('coins:btc;quotes_in:usd')
+
+    assert isinstance(result, CoinQuotes)
+    assert result.api_service == 'coinmarketcap'
+    assert result.raw_data == EXAMPLE_RESPONSE
+
+    assert result.model_dump()['coins'] == {
+        CoinSymbols.btc: {
+            'quotes': {QuoteSymbols.usd: {'quote': Decimal('6602.60701122')}}
+        }
+    }
+
+
+@respx.mock
+async def test_get_coin_quotes_with_cache_and_value_not_in_cache(any_aiocache):
+    EXAMPLE_RESPONSE = {
+        'data': {
+            '1': {
+                'id': 1,
+                'name': 'Bitcoin',
+                'symbol': 'BTC',
+                'slug': 'bitcoin',
+                'is_active': 1,
+                'is_fiat': 0,
+                'circulating_supply': 17199862,
+                'total_supply': 17199862,
+                'max_supply': 21000000,
+                'date_added': '2013-04-28T00:00:00.000Z',
+                'num_market_pairs': 331,
+                'cmc_rank': 1,
+                'last_updated': '2018-08-09T21:56:28.000Z',
+                'tags': ['mineable'],
+                'platform': None,
+                'self_reported_circulating_supply': None,
+                'self_reported_market_cap': None,
+                'quote': {
+                    '2781': {  # USD
+                        'price': 6602.60701122,
+                        'volume_24h': 4314444687.5194,
+                        'volume_change_24h': -0.152774,
+                        'percent_change_1h': 0.988615,
+                        'percent_change_24h': 4.37185,
+                        'percent_change_7d': -12.1352,
+                        'percent_change_30d': -12.1352,
+                        'market_cap': 852164659250.2758,
+                        'market_cap_dominance': 51,
+                        'fully_diluted_market_cap': 952835089431.14,
+                        'last_updated': '2018-08-09T21:56:28.000Z',
+                    }
+                },
+            }
+        },
+        'status': {
+            'timestamp': '2025-01-19T10:00:27.010Z',
+            'error_code': 0,
+            'error_message': '',
+            'elapsed': 10,
+            'credit_count': 1,
+            'notice': '',
+        },
+    }
+
+    # Mock api request
+    respx.get(
+        'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+    ).mock(
+        httpx.Response(
+            status_code=200,
+            json=EXAMPLE_RESPONSE,
+        )
+    )
+
+    cmc_service = CoinMarketCapService(
+        api_key='<api-key>',
+        cache=any_aiocache,
+    )
+
+    result: CoinQuotes = await cmc_service.get_coin_quotes(
+        coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+    )
+
+    # --------- Checks if the return was cached correctly ---------
+    EXPECTED_VALUE_IN_CACHE = (
+        '{'
+        """"coins": {"btc": {"quotes": {"usd": {"quote": "6602.60701122"}}}},"""  # noqa: E501
+        """"api_service": "coinmarketcap","""
+        f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
+        '}'
+    )
+    await any_aiocache.get(
+        'coins:btc;quotes_in:usd'
+    ) == EXPECTED_VALUE_IN_CACHE
+    # End
+
+    assert isinstance(result, CoinQuotes)
+    assert result.api_service == 'coinmarketcap'
+    assert result.raw_data == EXAMPLE_RESPONSE
+
+    assert result.model_dump()['coins'] == {
+        CoinSymbols.btc: {
+            'quotes': {QuoteSymbols.usd: {'quote': Decimal('6602.60701122')}}
+        }
     }
 
 

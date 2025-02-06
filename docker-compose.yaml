@@ -1,0 +1,15 @@
+services:
+  memcached:
+    image: memcached:latest
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
