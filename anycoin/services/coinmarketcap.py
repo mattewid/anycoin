@@ -47,9 +47,7 @@ class CoinMarketCapService(BaseAPIService):
         raw_data = await self._send_request(
             path='/cryptocurrency/quotes/latest', method='get', params=params
         )
-        return await CoinQuotes.from_cmc_raw_data(
-            api_service=self, raw_data=raw_data
-        )
+        return await CoinQuotes.from_cmc_raw_data(raw_data=raw_data)
 
     @staticmethod
     async def get_coin_id_by_symbol(coin_symbol: CoinSymbols) -> str:

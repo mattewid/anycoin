@@ -2,12 +2,14 @@ import json
 from decimal import Decimal
 from enum import Enum
 from http import HTTPStatus
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 import respx
 
 from anycoin import CoinSymbols, QuoteSymbols
+from anycoin.cache import Cache
 from anycoin.exeptions import (
     CoinNotSupportedCGK as CoinNotSupportedCGKException,
 )
@@ -81,9 +83,9 @@ async def test_send_request_path_not_startwith_bar():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result = await cmc_service._send_request(
+    result = await cgk_service._send_request(
         path='simple/price',  # path not start with /
         method='get',
     )
@@ -102,9 +104,9 @@ async def test_send_request():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result = await cmc_service._send_request(
+    result = await cgk_service._send_request(
         path='/simple/price', method='get'
     )
     assert result == EXAMPLE_RESPONSE
@@ -122,13 +124,13 @@ async def test_send_request_no_success():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
     with pytest.raises(
         GetCoinQuotesException,
         match=('Error retrieving coin quotes. API response:'),
     ):
-        await cmc_service._send_request(path='/simple/price', method='get')
+        await cgk_service._send_request(path='/simple/price', method='get')
 
 
 @respx.mock
@@ -138,13 +140,13 @@ async def test_send_request_request_error():
         side_effect=httpx.RequestError
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
     with pytest.raises(
         GetCoinQuotesException,
         match=('Error retrieving coin quotes'),
     ):
-        await cmc_service._send_request(path='/simple/price', method='get')
+        await cgk_service._send_request(path='/simple/price', method='get')
 
 
 @respx.mock
@@ -154,13 +156,13 @@ async def test_send_request_json_decode_error():
         side_effect=json.JSONDecodeError('abc', '123', 0)
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
     with pytest.raises(
         GetCoinQuotesException,
         match=('Error retrieving coin quotes'),
     ):
-        await cmc_service._send_request(path='/simple/price', method='get')
+        await cgk_service._send_request(path='/simple/price', method='get')
 
 
 async def test_get_coin_quotes_coin_not_supported():
@@ -169,13 +171,13 @@ async def test_get_coin_quotes_coin_not_supported():
 
     coin_symbol = FakeCoinSymbols.invalid_member
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
     with pytest.raises(
         GetCoinQuotesException,
         match=f'Coin {coin_symbol} not supported',
     ):
-        await cmc_service.get_coin_quotes(
+        await cgk_service.get_coin_quotes(
             coins=[coin_symbol], quotes_in=[QuoteSymbols.usd]
         )
 
@@ -186,13 +188,13 @@ async def test_get_coin_quotes_quote_coin_not_supported():
 
     quote_symbol = FakeQuoteSymbols.invalid_member
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
     with pytest.raises(
         GetCoinQuotesException,
         match=f'Quote {quote_symbol} not supported',
     ):
-        await cmc_service.get_coin_quotes(
+        await cgk_service.get_coin_quotes(
             coins=[CoinSymbols.btc], quotes_in=[quote_symbol]
         )
 
@@ -209,13 +211,13 @@ async def test_get_coin_quotes():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result: CoinQuotes = await cmc_service.get_coin_quotes(
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coingecko'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -237,13 +239,13 @@ async def test_get_coin_quotes_multi_coins():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result: CoinQuotes = await cmc_service.get_coin_quotes(
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
         coins=[CoinSymbols.btc, CoinSymbols.eth], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coingecko'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -268,13 +270,13 @@ async def test_get_coin_quotes_multi_quotes():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result: CoinQuotes = await cmc_service.get_coin_quotes(
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coingecko'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -302,14 +304,14 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
         )
     )
 
-    cmc_service = CoinGeckoService(api_key='<api-key>')
+    cgk_service = CoinGeckoService(api_key='<api-key>')
 
-    result: CoinQuotes = await cmc_service.get_coin_quotes(
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
         coins=[CoinSymbols.btc, CoinSymbols.eth],
         quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur],
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coingecko'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -325,6 +327,87 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
                 QuoteSymbols.eur: {'quote': Decimal('3001')},
             }
         },
+    }
+
+
+async def test_get_coin_quotes_with_cache_and_value_in_cache():
+    EXAMPLE_RESPONSE = {'bitcoin': {'usd': 100811}}
+
+    cache = Cache(Cache.MEMORY)
+    cache.get = AsyncMock(
+        return_value=(
+            '{'
+            """"coins": {"btc": {"quotes": {"usd": {"quote": "100811"}}}},"""
+            """"api_service": "coingecko","""
+            """"raw_data": {"bitcoin":{"usd": 100811}}"""
+            '}'
+        )
+    )
+
+    cgk_service = CoinGeckoService(
+        api_key='<api-key>',
+        cache=cache,
+    )
+
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
+        coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+    )
+
+    cache.get.assert_called_once_with('coins:btc;quotes_in:usd')
+
+    assert isinstance(result, CoinQuotes)
+    assert result.api_service == 'coingecko'
+    assert result.raw_data == EXAMPLE_RESPONSE
+
+    assert result.model_dump()['coins'] == {
+        CoinSymbols.btc: {
+            'quotes': {QuoteSymbols.usd: {'quote': Decimal('100811')}}
+        }
+    }
+
+
+@respx.mock
+async def test_get_coin_quotes_with_cache_and_value_not_in_cache():
+    EXAMPLE_RESPONSE = {'bitcoin': {'usd': 100811}}
+
+    # Mock api request
+    respx.get('https://pro-api.coingecko.com/api/v3/simple/price').mock(
+        httpx.Response(
+            status_code=200,
+            json=EXAMPLE_RESPONSE,
+        )
+    )
+
+    cache = Cache(Cache.MEMORY)
+
+    cgk_service = CoinGeckoService(
+        api_key='<api-key>',
+        cache=cache,
+    )
+
+    result: CoinQuotes = await cgk_service.get_coin_quotes(
+        coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+    )
+
+    # --------- Checks if the return was cached correctly ---------
+    EXPECTED_VALUE_IN_CACHE = (
+        '{'
+        """"coins": {"btc": {"quotes": {"usd": {"quote": "100811"}}}},"""
+        """"api_service": "coingecko","""
+        """"raw_data": {"bitcoin":{"usd": 100811}}"""
+        '}'
+    )
+    await cache.get('coins:btc;quotes_in:usd') == EXPECTED_VALUE_IN_CACHE
+    # End
+
+    assert isinstance(result, CoinQuotes)
+    assert result.api_service == 'coingecko'
+    assert result.raw_data == EXAMPLE_RESPONSE
+
+    assert result.model_dump()['coins'] == {
+        CoinSymbols.btc: {
+            'quotes': {QuoteSymbols.usd: {'quote': Decimal('100811')}}
+        }
     }
 
 

@@ -408,7 +408,7 @@ async def test_get_coin_quotes():
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -517,7 +517,7 @@ async def test_get_coin_quotes_multi_coins():
         coins=[CoinSymbols.btc, CoinSymbols.eth], quotes_in=[QuoteSymbols.usd]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -608,7 +608,7 @@ async def test_get_coin_quotes_multi_quotes():
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur]
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {
@@ -747,7 +747,7 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
         quotes_in=[QuoteSymbols.usd, QuoteSymbols.eur],
     )
     assert isinstance(result, CoinQuotes)
-    assert result.api_service is cmc_service
+    assert result.api_service == 'coinmarketcap'
     assert result.raw_data == EXAMPLE_RESPONSE
 
     assert result.model_dump()['coins'] == {

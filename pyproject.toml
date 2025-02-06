@@ -28,6 +28,12 @@ dev = [
     "pytest-cov>=6.0.0",
     "respx>=0.22.0",
 ]
+redis-cache = [
+    "aiocache[redis]>=0.12.3"
+]
+memcached-cache = [
+    "aiocache[memcached]>=0.12.3"
+]
 
 [project.urls]
 Homepage = "https://github.com/HK-Mattew/anycoin"
