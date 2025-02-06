@@ -8,7 +8,6 @@ import pytest
 import respx
 
 from anycoin import CoinSymbols, QuoteSymbols
-from anycoin.cache import Cache
 from anycoin.exeptions import (
     CoinNotSupportedCMC as CoinNotSupportedCMCException,
 )
@@ -768,7 +767,7 @@ async def test_get_coin_quotes_multi_coins_and_quotes():
     }
 
 
-async def test_get_coin_quotes_with_cache_and_value_in_cache():
+async def test_get_coin_quotes_with_cache_and_value_in_cache(any_aiocache):
     EXAMPLE_RESPONSE = {
         'data': {
             '1': {
@@ -816,8 +815,7 @@ async def test_get_coin_quotes_with_cache_and_value_in_cache():
         },
     }
 
-    cache = Cache(Cache.MEMORY)
-    cache.get = AsyncMock(
+    any_aiocache.get = AsyncMock(
         return_value=(
             '{'
             """"coins": {"btc": {"quotes": {"usd": {"quote": "6602.60701122"}}}},"""  # noqa: E501
@@ -829,14 +827,14 @@ async def test_get_coin_quotes_with_cache_and_value_in_cache():
 
     cmc_service = CoinMarketCapService(
         api_key='<api-key>',
-        cache=cache,
+        cache=any_aiocache,
     )
 
     result: CoinQuotes = await cmc_service.get_coin_quotes(
         coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
     )
 
-    cache.get.assert_called_once_with('coins:btc;quotes_in:usd')
+    any_aiocache.get.assert_called_once_with('coins:btc;quotes_in:usd')
 
     assert isinstance(result, CoinQuotes)
     assert result.api_service == 'coinmarketcap'
@@ -850,7 +848,7 @@ async def test_get_coin_quotes_with_cache_and_value_in_cache():
 
 
 @respx.mock
-async def test_get_coin_quotes_with_cache_and_value_not_in_cache():
+async def test_get_coin_quotes_with_cache_and_value_not_in_cache(any_aiocache):
     EXAMPLE_RESPONSE = {
         'data': {
             '1': {
@@ -908,11 +906,9 @@ async def test_get_coin_quotes_with_cache_and_value_not_in_cache():
         )
     )
 
-    cache = Cache(Cache.MEMORY)
-
     cmc_service = CoinMarketCapService(
         api_key='<api-key>',
-        cache=cache,
+        cache=any_aiocache,
     )
 
     result: CoinQuotes = await cmc_service.get_coin_quotes(
@@ -927,7 +923,9 @@ async def test_get_coin_quotes_with_cache_and_value_not_in_cache():
         f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
         '}'
     )
-    await cache.get('coins:btc;quotes_in:usd') == EXPECTED_VALUE_IN_CACHE
+    await any_aiocache.get(
+        'coins:btc;quotes_in:usd'
+    ) == EXPECTED_VALUE_IN_CACHE
     # End
 
     assert isinstance(result, CoinQuotes)
