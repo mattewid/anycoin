@@ -49,11 +49,8 @@ jobs:
         cache: pip
         cache-dependency-path: pyproject.toml
 
-    - name: Start docker-compose.yaml services
-      run: docker compose up -d
-
     - name: Install dependencies
       run: pip install .[dev]
     
     - name: Test with pytest
-      run: pytest -vv
+      run: pytest -vv -m "not external_service"

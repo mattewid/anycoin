@@ -5,7 +5,10 @@ from aiocache import Cache
 
 @pytest_asyncio.fixture(
     params=[
-        pytest.param({'cache_class': Cache.MEMORY}, id='memory-cache'),
+        pytest.param(
+            {'cache_class': Cache.MEMORY},
+            id='memory-cache',
+        ),
         pytest.param(
             {
                 'cache_class': Cache.MEMCACHED,
@@ -13,6 +16,7 @@ from aiocache import Cache
                 'port': 11211,
             },
             id='memcached-cache',
+            marks=[pytest.mark.external_service],
         ),
         pytest.param(
             {
@@ -21,6 +25,7 @@ from aiocache import Cache
                 'port': 6379,
             },
             id='redis-cache',
+            marks=[pytest.mark.external_service],
         ),
     ]
 )
