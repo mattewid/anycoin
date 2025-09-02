@@ -1,7 +1,10 @@
+import asyncio
 import json
+import time
 from decimal import Decimal
 from enum import Enum
-from unittest.mock import AsyncMock
+from types import CoroutineType
+from unittest.mock import AsyncMock, call
 
 import httpx
 import pytest
@@ -937,6 +940,112 @@ async def test_get_coin_quotes_with_cache_and_value_not_in_cache(any_aiocache):
             'quotes': {QuoteSymbols.usd: {'quote': Decimal('6602.60701122')}}
         }
     }
+
+
+@respx.mock
+async def test_get_coin_quotes_with_cache_and_asyncio_concurrency(
+    any_aiocache, monkeypatch
+):
+    EXAMPLE_RESPONSE = {
+        'data': {
+            '1': {
+                'id': 1,
+                'name': 'Bitcoin',
+                'symbol': 'BTC',
+                'slug': 'bitcoin',
+                'is_active': 1,
+                'is_fiat': 0,
+                'circulating_supply': 17199862,
+                'total_supply': 17199862,
+                'max_supply': 21000000,
+                'date_added': '2013-04-28T00:00:00.000Z',
+                'num_market_pairs': 331,
+                'cmc_rank': 1,
+                'last_updated': '2018-08-09T21:56:28.000Z',
+                'tags': ['mineable'],
+                'platform': None,
+                'self_reported_circulating_supply': None,
+                'self_reported_market_cap': None,
+                'quote': {
+                    '2781': {  # USD
+                        'price': 6602.60701122,
+                        'volume_24h': 4314444687.5194,
+                        'volume_change_24h': -0.152774,
+                        'percent_change_1h': 0.988615,
+                        'percent_change_24h': 4.37185,
+                        'percent_change_7d': -12.1352,
+                        'percent_change_30d': -12.1352,
+                        'market_cap': 852164659250.2758,
+                        'market_cap_dominance': 51,
+                        'fully_diluted_market_cap': 952835089431.14,
+                        'last_updated': '2018-08-09T21:56:28.000Z',
+                    }
+                },
+            }
+        },
+        'status': {
+            'timestamp': '2025-01-19T10:00:27.010Z',
+            'error_code': 0,
+            'error_message': '',
+            'elapsed': 10,
+            'credit_count': 1,
+            'notice': '',
+        },
+    }
+    DELAY_PER_CALL = 1.0
+
+    cmc_service = CoinMarketCapService(
+        api_key='<api-key>',
+        cache=any_aiocache,
+    )
+
+    # Mock api request
+    async def delayed_response(request):
+        await asyncio.sleep(DELAY_PER_CALL)
+        return (
+            '{'
+            """"coins": {"btc": {"quotes": {"usd": {"quote": "6602.60701122"}}}},"""  # noqa: E501
+            """"api_service": "coinmarketcap","""
+            f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
+            '}'
+        )
+
+    any_aiocache.get = AsyncMock(side_effect=delayed_response)
+
+    CALLS_COUNT = 10
+
+    coroutines: list[CoroutineType] = [
+        cmc_service.get_coin_quotes(
+            coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+        )
+        for _ in range(CALLS_COUNT)
+    ]
+
+    start_time: float = time.perf_counter()
+    results: list[CoinQuotes] = await asyncio.gather(*coroutines)
+    end_time: float = time.perf_counter()
+
+    any_aiocache.get.assert_has_awaits([
+        call('coins:btc;quotes_in:usd') for _ in range(CALLS_COUNT)
+    ])
+
+    # Even when running multiple tasks,
+    # the execution time should be limited
+    # to one task only. This is because caching is enabled.
+    assert (end_time - start_time) < (DELAY_PER_CALL * CALLS_COUNT)
+
+    for result in results:
+        assert isinstance(result, CoinQuotes)
+        assert result.api_service == 'coinmarketcap'
+        assert result.raw_data == EXAMPLE_RESPONSE
+
+        assert result.model_dump()['coins'] == {
+            CoinSymbols.btc: {
+                'quotes': {
+                    QuoteSymbols.usd: {'quote': Decimal('6602.60701122')}
+                }
+            }
+        }
 
 
 def test_repr():

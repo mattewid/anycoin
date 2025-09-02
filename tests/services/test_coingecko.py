@@ -1,7 +1,10 @@
+import asyncio
 import json
+import time
 from decimal import Decimal
 from enum import Enum
 from http import HTTPStatus
+from types import CoroutineType
 from unittest.mock import AsyncMock
 
 import httpx
@@ -407,6 +410,80 @@ async def test_get_coin_quotes_with_cache_and_value_not_in_cache(any_aiocache):
             'quotes': {QuoteSymbols.usd: {'quote': Decimal('100811')}}
         }
     }
+
+
+@respx.mock
+async def test_get_coin_quotes_with_cache_and_asyncio_concurrency(
+    any_aiocache, monkeypatch
+):
+    EXAMPLE_RESPONSE = {'bitcoin': {'usd': 100811}}
+    DELAY_PER_CALL = 1.0
+
+    cgk_service = CoinGeckoService(
+        api_key='<api-key>',
+        cache=any_aiocache,
+    )
+
+    # Mock api request
+    async def delayed_response(request):
+        await asyncio.sleep(DELAY_PER_CALL)
+        return httpx.Response(200, json=EXAMPLE_RESPONSE)
+
+    respx.get('https://pro-api.coingecko.com/api/v3/simple/price').mock(
+        side_effect=delayed_response
+    )
+
+    # Mock cgk_service.get_coin_quotes
+    _get_coin_quotes_mock = AsyncMock(
+        cgk_service._get_coin_quotes, side_effect=cgk_service._get_coin_quotes
+    )
+    monkeypatch.setattr(cgk_service, '_get_coin_quotes', _get_coin_quotes_mock)
+
+    CALLS_COUNT = 10
+
+    coroutines: list[CoroutineType] = [
+        cgk_service.get_coin_quotes(
+            coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+        )
+        for _ in range(CALLS_COUNT)
+    ]
+
+    start_time: float = time.perf_counter()
+    results: list[CoinQuotes] = await asyncio.gather(*coroutines)
+    end_time: float = time.perf_counter()
+
+    _get_coin_quotes_mock.assert_awaited_once_with(
+        coins=[CoinSymbols.btc], quotes_in=[QuoteSymbols.usd]
+    )
+
+    # Even when running multiple tasks,
+    # the execution time should be limited
+    # to one task only. This is because caching is enabled.
+    assert (end_time - start_time) < (DELAY_PER_CALL * CALLS_COUNT)
+
+    # --------- Checks if the return was cached correctly ---------
+    EXPECTED_VALUE_IN_CACHE = (
+        '{'
+        """"coins": {"btc": {"quotes": {"usd": {"quote": "100811"}}}},"""
+        """"api_service": "coingecko","""
+        f""""raw_data": {json.dumps(EXAMPLE_RESPONSE)}"""
+        '}'
+    )
+    await any_aiocache.get(
+        'coins:btc;quotes_in:usd'
+    ) == EXPECTED_VALUE_IN_CACHE
+    # End
+
+    for result in results:
+        assert isinstance(result, CoinQuotes)
+        assert result.api_service == 'coingecko'
+        assert result.raw_data == EXAMPLE_RESPONSE
+
+        assert result.model_dump()['coins'] == {
+            CoinSymbols.btc: {
+                'quotes': {QuoteSymbols.usd: {'quote': Decimal('100811')}}
+            }
+        }
 
 
 def test_repr():
