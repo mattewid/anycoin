@@ -2,12 +2,15 @@ import json
 from http import HTTPStatus
 
 import httpx
-from aiocache.lock import RedLock
 
 from .._enums import CoinSymbols, QuoteSymbols
 from .._mapped_ids import get_cgk_coin_ids as _get_cgk_coin_ids
 from .._mapped_ids import get_cgk_quotes_ids as _get_cgk_quotes_ids
-from ..cache import Cache, _get_cache_key_for_get_coin_quotes_method_params
+from ..cache import (
+    Cache,
+    _get_cache_key_for_get_coin_quotes_method_params,
+    _get_or_set_coin_quotes_cache,
+)
 from ..exeptions import (
     CoinNotSupportedCGK as CoinNotSupportedCGKException,
 )
@@ -30,14 +33,6 @@ class CoinGeckoService(BaseAPIService):
         self._cache = cache
         self._cache_ttl = cache_ttl
 
-        self._cache_lock = None
-        if self._cache is not None:
-            self._cache_lock = RedLock(
-                self._cache,
-                key='get_coin_quotes',
-                lease=20,
-            )
-
     async def get_coin_quotes(
         self,
         coins: list[CoinSymbols],
@@ -48,24 +43,17 @@ class CoinGeckoService(BaseAPIService):
                 coins=coins, quotes_in=quotes_in
             )
         else:
-            async with self._cache_lock:
-                cache_key: str = (
-                    _get_cache_key_for_get_coin_quotes_method_params(
-                        coins=coins, quotes_in=quotes_in
-                    )
-                )
-
-                if cached_value := await self._cache.get(cache_key):
-                    coin_quotes = CoinQuotes.model_validate_json(cached_value)
-                else:
-                    coin_quotes: CoinQuotes = await self._get_coin_quotes(
-                        coins=coins, quotes_in=quotes_in
-                    )
-                    await self._cache.set(
-                        cache_key,
-                        coin_quotes.model_dump_json(),
-                        ttl=self._cache_ttl,
-                    )
+            cache_key: str = _get_cache_key_for_get_coin_quotes_method_params(
+                coins=coins, quotes_in=quotes_in
+            )
+            coin_quotes: CoinQuotes = await _get_or_set_coin_quotes_cache(
+                cache=self._cache,
+                key=cache_key,
+                coro_func=lambda: self._get_coin_quotes(
+                    coins=coins, quotes_in=quotes_in
+                ),
+                ttl=self._cache_ttl,
+            )
 
         return coin_quotes
 
